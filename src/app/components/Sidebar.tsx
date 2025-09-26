@@ -113,11 +113,7 @@ export default function Sidebar({
       </div>
 
       {/* 底部信息 */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          小数小科 - AI助手
-        </div>
-      </div>
+     
     </div>
   );
 }

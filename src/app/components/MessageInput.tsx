@@ -47,7 +47,7 @@ export default function MessageInput({ onSendMessage, isLoading }: MessageInputP
   };
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"  style={{height: '188px'}}>
+    <div className="p-4"  style={{height: '188px'}}>
       <div className="max-w-4xl mx-auto">
         {/* 文件预览区 */}
         {files.length > 0 && (
