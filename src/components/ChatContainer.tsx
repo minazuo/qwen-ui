@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Menu, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import MessageInput from './MessageInput';
@@ -31,9 +34,17 @@ export default function ChatContainer() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  // 确保客户端渲染标志
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // 检测屏幕尺寸
   useEffect(() => {
+    if (!isClient) return; // 只在客户端执行
+    
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
@@ -46,7 +57,7 @@ export default function ChatContainer() {
     window.addEventListener('resize', checkScreenSize);
 
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+  }, [isClient]);
 
   // 加载历史对话
   useEffect(() => {
@@ -399,7 +410,7 @@ export default function ChatContainer() {
     setError(null);
     
     // 在手机端选择对话后自动隐藏侧边栏
-    if (isMobile) {
+    if (isClient && isMobile) {
       setIsSidebarVisible(false);
     }
   };
@@ -410,8 +421,8 @@ export default function ChatContainer() {
 
   return (
     <div className="flex h-full relative">
-      {/* 遮罩层 - 仅在手机端侧边栏显示时显示 */}
-      {isMobile && isSidebarVisible && (
+      {/* 遗罩层 - 仅在手机端侧边栏显示时显示 */}
+      {isClient && isMobile && isSidebarVisible && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsSidebarVisible(false)}
@@ -419,18 +430,18 @@ export default function ChatContainer() {
       )}
       
       {/* 左侧历史对话 */}
-      <div className={`
-        ${isMobile ? 'fixed left-0 top-0 h-full z-50' : 'relative'}
-        ${isSidebarVisible ? 'translate-x-0' : '-translate-x-full'}
-        ${!isMobile && !isSidebarVisible ? 'w-0 overflow-hidden' : ''}
-        transition-all duration-300 ease-in-out
-      `}>
+      <div className={cn(
+        "transition-all duration-300 ease-in-out",
+        isClient && isMobile ? 'fixed left-0 top-0 h-full z-50' : 'relative',
+        isSidebarVisible ? 'translate-x-0' : '-translate-x-full',
+        !isClient || (!isMobile && !isSidebarVisible) ? 'w-0 overflow-hidden' : ''
+      )}>
         <Sidebar
           conversations={conversations}
           currentConversationId={currentConversationId}
           onSelectConversation={handleSelectConversation}
           onNewConversation={handleNewConversation}
-          onClose={isMobile ? () => setIsSidebarVisible(false) : undefined}
+          onClose={isClient && isMobile ? () => setIsSidebarVisible(false) : undefined}
           onToggleSidebar={toggleSidebar}
           isLoading={isLoading}
           isLoadingHistory={isLoadingHistory}
@@ -440,41 +451,42 @@ export default function ChatContainer() {
       {/* 右侧对话区域 */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* 顶部工具栏 */}
-        <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           {/* 侧边栏切换按钮 */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleSidebar}
-            className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title={isSidebarVisible ? '隐藏侧边栏' : '显示侧边栏'}
+            className="h-8 w-8"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isSidebarVisible ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              )}
-            </svg>
-          </button>
+            {isSidebarVisible ? (
+              <X className="w-4 h-4" />
+            ) : (
+              <Menu className="w-4 h-4" />
+            )}
+          </Button>
           
           {/* 当前对话标题 */}
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+          <h2 className="text-lg font-medium text-foreground truncate">
             {currentConversation?.title || '新对话'}
           </h2>
         </div>
         {/* 错误提示 */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 mx-4 mt-4 rounded-lg">
+          <div className="bg-destructive/15 border border-destructive/20 text-destructive px-4 py-3 mx-4 mt-4 rounded-lg">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <span>{error}</span>
-              <button 
+              <Button 
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-6 w-6 text-destructive hover:text-destructive"
                 onClick={() => setError(null)}
-                className="ml-auto text-red-500 hover:text-red-700"
               >
-                ×
-              </button>
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         )}

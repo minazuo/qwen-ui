@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
+import { Bot, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import Welcome from './Welcome';
 import TypewriterText from './TypewriterText';
 
@@ -59,38 +62,42 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
+    <div className="flex-1 overflow-y-auto bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {conversation.messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-4 ${
+            className={cn(
+              "flex gap-4",
               message.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
+            )}
           >
+            {/* AI头像 */}
             {message.role === 'assistant' && (
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">AI</span>
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-primary-foreground" />
                 </div>
               </div>
             )}
             
-            <div
-              className={`max-w-[70%] rounded-lg px-4 py-3 ${
+            {/* 消息内容卡片 */}
+            <Card
+              className={cn(
+                "max-w-[70%] px-4 py-3 shadow-sm",
                 message.role === 'user'
-                  ? 'bg-blue-600 text-white ml-auto'
-                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700'
-              }`}
+                  ? 'bg-primary text-primary-foreground ml-auto'
+                  : 'bg-card text-card-foreground'
+              )}
             >
               <div className="whitespace-pre-wrap break-words">
                 {/* 如果是AI消息且内容为空且正在加载，显示"正在思考" */}
                 {message.role === 'assistant' && !message.content && isLoading ? (
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
                     <span className="text-sm">
                       正在思考...
@@ -109,22 +116,22 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
                 )}
               </div>
               <div
-                className={`text-xs mt-2 ${
+                className={cn(
+                  "text-xs mt-2",
                   message.role === 'user'
-                    ? 'text-blue-100'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}
+                    ? 'text-primary-foreground/70'
+                    : 'text-muted-foreground'
+                )}
               >
                 {formatTime(message.timestamp)}
               </div>
-            </div>
+            </Card>
 
+            {/* 用户头像 */}
             {message.role === 'user' && (
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gray-600 dark:bg-gray-400 rounded-full flex items-center justify-center">
-                  <span className="text-white dark:text-gray-900 text-sm font-medium">
-                    你
-                  </span>
+                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-secondary-foreground" />
                 </div>
               </div>
             )}
