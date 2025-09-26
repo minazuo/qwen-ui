@@ -10,6 +10,8 @@ interface Conversation {
   title: string;
   messages: Message[];
   lastMessage: Date;
+  sessionId: string;
+  prompt?: string; // 添加 prompt 字段
 }
 
 interface SidebarProps {
@@ -48,8 +50,8 @@ export default function Sidebar({
     }
   };
 
-  const truncateTitle = (title: string, maxLength: number = 20) => {
-    if (title.length <= maxLength) return title;
+  const truncateTitle = (title: string | undefined, maxLength: number = 20) => {
+    if (!title || title.length <= maxLength) return title || '新对话';
     return title.substring(0, maxLength) + '...';
   };
 
@@ -123,7 +125,7 @@ export default function Sidebar({
               <div
                 key={conversation.id}
                 onClick={() => onSelectConversation(conversation.id)}
-                className={`group cursor-pointer rounded-lg p-3 mb-2 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                className={`group cursor-pointer rounded-lg p-3 mb-2 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 ${
                   currentConversationId === conversation.id
                     ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
                     : 'border border-transparent'
@@ -139,10 +141,17 @@ export default function Sidebar({
                     </span>
                   </div>
                   
-                  {conversation.messages.length > 0 && (
+                  {/* 显示 prompt 内容，如果没有 prompt 则显示最后一条消息 */}
+                  {conversation.prompt ? (
                     <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
-                      {conversation.messages[conversation.messages.length - 1].content}
+                      {conversation.prompt}
                     </p>
+                  ) : (
+                    conversation.messages.length > 0 && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                        {conversation.messages[conversation.messages.length - 1].content}
+                      </p>
+                    )
                   )}
                 </div>
                 

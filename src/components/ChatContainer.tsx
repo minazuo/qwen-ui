@@ -19,6 +19,7 @@ interface Conversation {
   messages: Message[];
   lastMessage: Date;
   sessionId: string;
+  prompt?: string; // 添加 prompt 字段
 }
 
 export default function ChatContainer() {
@@ -60,13 +61,48 @@ export default function ChatContainer() {
           console.log('历史对话加载成功:', response.data);
           
           // 将历史对话转换为本地对话格式
-          const historyConversations: Conversation[] = response.data.map((chat: HistoryChatItem) => ({
-            id: chat.chat_id,
-            title: chat.title,
-            sessionId: chat.session_id,
-            messages: [], // 历史对话的具体消息内容需要另外的接口获取，这里先为空
-            lastMessage: new Date(chat.updated_at)
-          }));
+          const historyConversations: Conversation[] = response.data.map((chat: HistoryChatItem) => {
+            // 处理消息数据
+            let messages: Message[] = [];
+            
+            // 如果API返回了消息数据，转换格式
+            if (chat.messages && Array.isArray(chat.messages)) {
+              // 过滤掉system消息，只保留user和assistant消息
+              const userMessages = chat.messages.filter(msg => msg.role !== 'system');
+              messages = userMessages.map((msg, index) => ({
+                id: `${chat.session_id}_msg_${index}`,
+                content: msg.content,
+                role: msg.role as 'user' | 'assistant',
+                timestamp: new Date(chat.created_at)
+              }));
+            } else if (chat.prompt) {
+              // 如果没有完整消息但有prompt，创建初始用户消息
+              messages = [{
+                id: `${chat.session_id}_prompt`,
+                content: chat.prompt,
+                role: 'user',
+                timestamp: new Date(chat.created_at)
+              }];
+            }
+            
+            // 生成对话标题
+            let title = chat.title;
+            if (!title) {
+              // 如果没有title，使用prompt的前20个字符作为标题
+              title = chat.prompt ? 
+                (chat.prompt.length > 20 ? chat.prompt.slice(0, 20) + '...' : chat.prompt) : 
+                '新对话';
+            }
+            
+            return {
+              id: chat.chat_id || chat.session_id, // 使用session_id作为fallback
+              title: title,
+              sessionId: chat.session_id,
+              messages: messages,
+              lastMessage: new Date(chat.updated_at),
+              prompt: chat.prompt
+            };
+          });
           
           // 如果没有历史对话，创建一个默认的新对话
           if (historyConversations.length === 0) {
@@ -342,7 +378,26 @@ export default function ChatContainer() {
   };
 
   const handleSelectConversation = (conversationId: string) => {
+    const selectedConversation = conversations.find(conv => conv.id === conversationId);
+    
+    if (!selectedConversation) {
+      console.error('找不到指定的对话:', conversationId);
+      return;
+    }
+    
+    console.log('切换到对话:', {
+      id: selectedConversation.id,
+      title: selectedConversation.title,
+      messageCount: selectedConversation.messages.length,
+      prompt: selectedConversation.prompt
+    });
+    
+    // 设置当前对话 ID
     setCurrentConversationId(conversationId);
+    
+    // 清除错误状态
+    setError(null);
+    
     // 在手机端选择对话后自动隐藏侧边栏
     if (isMobile) {
       setIsSidebarVisible(false);

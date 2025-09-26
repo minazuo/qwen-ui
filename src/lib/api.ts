@@ -24,11 +24,20 @@ export interface GetHistoryChatsRequest {
 }
 
 export interface HistoryChatItem {
-  chat_id: string;
-  title: string;
-  session_id: string;
+  prompt: string;
+  user_id: string;
+  chatModelInfo: ChatModelInfo;
   created_at: string;
+  messages: Array<{
+    role: string;
+    content: string;
+  }>;
+  session_id: string;
+  files_content?: any;
   updated_at: string;
+  // 为了兼容性，保留一些可选字段
+  chat_id?: string;
+  title?: string;
   message_count?: number;
 }
 
