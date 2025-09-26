@@ -54,11 +54,11 @@ export default function MainSidebar() {
   };
 
   return (
-    <div className="w-20 flex flex-col items-center py-6">
+    <div className="w-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl flex flex-col items-center py-6">
       {/* Logo */}
       <div className="mb-8">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            千
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg">
+          千
         </div>
       </div>
 
@@ -71,9 +71,9 @@ export default function MainSidebar() {
               key={tab.id}
               onClick={() => handleTabClick(tab.path)}
               className={`
-                group relative w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200
+                group relative w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm hover:shadow-md
                 ${isActive
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-md ring-2 ring-blue-200 dark:ring-blue-800'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300'
                 }
               `}
@@ -92,7 +92,7 @@ export default function MainSidebar() {
 
       {/* 用户头像/设置 */}
       <div className="mt-auto">
-        <button className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+        <button className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm hover:shadow-md">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
