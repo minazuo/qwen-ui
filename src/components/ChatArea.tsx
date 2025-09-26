@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Welcome from './Welcome';
+import TypewriterText from './TypewriterText';
 
 interface Message {
   id: string;
@@ -49,44 +51,10 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
     });
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🤖</div>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-            你好！我是小数小科
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            有什么可以帮助您的吗？
-          </p>
-          <p className="text-gray-500 dark:text-gray-500 mt-2 text-sm">
-            请在下方输入框中输入您的问题
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // 如果对话存在但没有消息，显示欢迎信息
-  if (conversation.messages.length === 0) {
+  if (!conversation || conversation.messages.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
-          <div className="text-center">
-             <div className="text-6xl mb-4">🤖</div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              你好！我是小数小科
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              有什么可以帮助您的吗？
-            </p>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              请在下方输入框中输入您的问题
-            </div>
-          </div>
-        </div>
-      </div>
+     <Welcome></Welcome>
     );
   }
 
@@ -116,7 +84,7 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
               }`}
             >
               <div className="whitespace-pre-wrap break-words">
-                {/* 如果是AI消息且内容为空且正在加载，显示“正在思考” */}
+                {/* 如果是AI消息且内容为空且正在加载，显示"正在思考" */}
                 {message.role === 'assistant' && !message.content && isLoading ? (
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                     <div className="flex gap-1">
@@ -128,17 +96,16 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
                       正在思考...
                     </span>
                   </div>
+                ) : message.role === 'assistant' ? (
+                  /* AI消息使用打字机效果 */
+                  <TypewriterText 
+                    text={message.content}
+                    speed={30}
+                    isStreaming={isLoading && conversation?.messages[conversation.messages.length - 1]?.id === message.id}
+                  />
                 ) : (
-                  <>
-                    {message.content}
-                    {/* 如果是正在输出的AI消息且内容不为空，显示光标 */}
-                    {message.role === 'assistant' && 
-                     message.content &&
-                     isLoading && 
-                     conversation?.messages[conversation.messages.length - 1]?.id === message.id && (
-                      <span className="inline-block w-2 h-5 bg-blue-500 ml-1 animate-pulse" />
-                    )}
-                  </>
+                  /* 用户消息直接显示 */
+                  message.content
                 )}
               </div>
               <div

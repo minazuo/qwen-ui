@@ -50,7 +50,7 @@ export default function MessageInput({ onSendMessage, isLoading }: MessageInputP
   };
 
   return (
-    <div className="relative border-t border-gray-200/30 dark:border-gray-700/30">
+    <div className="relative border-t bg-gray-50 dark:bg-gray-900 border-gray-200/30 dark:border-gray-700/30">
       <div className="relative p-6">
         <div className="max-w-4xl mx-auto">
           
