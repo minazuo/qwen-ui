@@ -65,6 +65,30 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
     );
   }
 
+  // 如果对话存在但没有消息，显示欢迎信息
+  if (conversation.messages.length === 0) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl font-medium">AI</span>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              你好！我是小数小科
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              有什么可以帮助您的吗？
+            </p>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              请在下方输入框中输入您的问题
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -91,12 +115,29 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
               }`}
             >
               <div className="whitespace-pre-wrap break-words">
-                {message.content}
-                {/* 如果是正在输出的AI消息且内容不为空，显示光标 */}
-                {message.role === 'assistant' && 
-                 isLoading && 
-                 conversation?.messages[conversation.messages.length - 1]?.id === message.id && (
-                  <span className="inline-block w-2 h-5 bg-blue-500 ml-1 animate-pulse" />
+                {/* 如果是AI消息且内容为空且正在加载，显示“正在思考” */}
+                {message.role === 'assistant' && !message.content && isLoading ? (
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-sm">
+                      正在思考...
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    {message.content}
+                    {/* 如果是正在输出的AI消息且内容不为空，显示光标 */}
+                    {message.role === 'assistant' && 
+                     message.content &&
+                     isLoading && 
+                     conversation?.messages[conversation.messages.length - 1]?.id === message.id && (
+                      <span className="inline-block w-2 h-5 bg-blue-500 ml-1 animate-pulse" />
+                    )}
+                  </>
                 )}
               </div>
               <div
@@ -122,29 +163,6 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
           </div>
         ))}
 
-        {/* 加载指示器 */}
-        {isLoading && (
-          <div className="flex gap-4 justify-start">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">AI</span>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  正在思考...
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
         {/* 消息结束标记 */}
         <div ref={messagesEndRef} />
       </div>

@@ -28,12 +28,7 @@ export default function Home() {
       title: '新对话',
       sessionId: generateSessionId('123'),
       messages: [
-        {
-          id: '1',
-          content: '你好！我是小数小科，有什么可以帮助您的吗？',
-          role: 'assistant',
-          timestamp: new Date()
-        }
+        // 初始不添加AI消息，等待用户发送第一条消息时再添加
       ],
       lastMessage: new Date()
     }
@@ -80,16 +75,17 @@ export default function Home() {
     
     const initialAiMessage: Message = {
       id: aiMessageId,
-      content: '',
+      content: '', // 初始为空，等待流式数据
       role: 'assistant',
       timestamp: new Date()
     };
 
     console.log(`[初始化] 创建AI消息 ID: ${aiMessageId}, 目标对话: ${targetConversationId}`);
 
+    // 立即添加一个空的AI消息占位
     setConversations(prev => prev.map(conv => {
       if (conv.id === targetConversationId) {
-        console.log(`[初始化] 添加空消息到对话 ${conv.id}`);
+        console.log(`[初始化] 添加AI消息占位到对话 ${conv.id}`);
         return {
           ...conv,
           messages: [...conv.messages, initialAiMessage],
@@ -120,7 +116,8 @@ export default function Home() {
             return;
           }
 
-          if (chunk) {
+          // 只有在收到真正的内容时才更新消息
+          if (chunk && chunk.trim()) {
             // 更新AI消息内容 - 使用函数式更新确保可靠性
             setConversations(prevConversations => {
               console.log(`[AI-${aiMessageId}] 开始更新消息内容:`, chunk);
@@ -195,12 +192,7 @@ export default function Home() {
       title: '新对话',
       sessionId: generateSessionId('123'),
       messages: [
-        {
-          id: Date.now().toString(),
-          content: '你好！我是小数小科，有什么可以帮助您的吗？',
-          role: 'assistant',
-          timestamp: new Date()
-        }
+        // 初始不添加AI消息，等待用户发送消息时再添加
       ],
       lastMessage: new Date()
     };
