@@ -17,13 +17,17 @@ interface SidebarProps {
   currentConversationId: string;
   onSelectConversation: (conversationId: string) => void;
   onNewConversation: () => void;
+  onClose?: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export default function Sidebar({
   conversations,
   currentConversationId,
   onSelectConversation,
-  onNewConversation
+  onNewConversation,
+  onClose,
+  onToggleSidebar
 }: SidebarProps) {
   const formatDate = (date: Date) => {
     const now = new Date();
@@ -53,6 +57,18 @@ export default function Sidebar({
           <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
             小数小科
           </h1>
+          {/* 关闭按钮 - 仅在移动端显示 */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden p-1 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="关闭侧边栏"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
         
         {/* 新建对话按钮 */}
@@ -104,7 +120,16 @@ export default function Sidebar({
                 
                 {/* 选中指示器 */}
                 {currentConversationId === conversation.id && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-600 rounded-full"></div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // 防止触发父元素的点击事件
+                      onToggleSidebar?.();
+                    }}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors group"
+                    title="点击切换侧边栏"
+                  >
+                    <div className="w-2 h-2 bg-blue-600 rounded-full group-hover:scale-110 transition-transform"></div>
+                  </button>
                 )}
               </div>
             ))}

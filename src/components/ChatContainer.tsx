@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import MessageInput from './MessageInput';
@@ -37,6 +37,24 @@ export default function ChatContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatModelInfo, setChatModelInfo] = useState<ChatModelInfo>(defaultChatModelInfo);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 检测屏幕尺寸
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarVisible(false); // 小屏幕默认隐藏侧边栏
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const currentConversation = conversations.find(conv => conv.id === currentConversationId);
 
@@ -204,20 +222,67 @@ export default function ChatContainer() {
 
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
+    // 在手机端选择对话后自动隐藏侧边栏
+    if (isMobile) {
+      setIsSidebarVisible(false);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
+      {/* 遮罩层 - 仅在手机端侧边栏显示时显示 */}
+      {isMobile && isSidebarVisible && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarVisible(false)}
+        />
+      )}
+      
       {/* 左侧历史对话 */}
-      <Sidebar
-        conversations={conversations}
-        currentConversationId={currentConversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
-      />
+      <div className={`
+        ${isMobile ? 'fixed left-0 top-0 h-full z-50' : 'relative'}
+        ${isSidebarVisible ? 'translate-x-0' : '-translate-x-full'}
+        ${!isMobile && !isSidebarVisible ? 'w-0 overflow-hidden' : ''}
+        transition-all duration-300 ease-in-out
+      `}>
+        <Sidebar
+          conversations={conversations}
+          currentConversationId={currentConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          onClose={isMobile ? () => setIsSidebarVisible(false) : undefined}
+          onToggleSidebar={toggleSidebar}
+        />
+      </div>
       
       {/* 右侧对话区域 */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* 顶部工具栏 */}
+        <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+          {/* 侧边栏切换按钮 */}
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title={isSidebarVisible ? '隐藏侧边栏' : '显示侧边栏'}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isSidebarVisible ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              )}
+            </svg>
+          </button>
+          
+          {/* 当前对话标题 */}
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+            {currentConversation?.title || '新对话'}
+          </h2>
+        </div>
         {/* 错误提示 */}
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 mx-4 mt-4 rounded-lg">
