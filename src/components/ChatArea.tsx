@@ -55,10 +55,13 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
         <div className="text-center">
           <div className="text-6xl mb-4">🤖</div>
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-            欢迎使用小数小科
+            你好！我是小数小科
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            选择一个对话或创建新对话开始聊天
+            有什么可以帮助您的吗？
+          </p>
+          <p className="text-gray-500 dark:text-gray-500 mt-2 text-sm">
+            请在下方输入框中输入您的问题
           </p>
         </div>
       </div>
@@ -71,9 +74,7 @@ export default function ChatArea({ conversation, isLoading }: ChatAreaProps) {
       <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl font-medium">AI</span>
-            </div>
+             <div className="text-6xl mb-4">🤖</div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               你好！我是小数小科
             </h3>

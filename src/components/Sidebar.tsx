@@ -20,6 +20,7 @@ interface SidebarProps {
   onClose?: () => void;
   onToggleSidebar?: () => void;
   isLoading?: boolean;
+  isLoadingHistory?: boolean;
 }
 
 export default function Sidebar({
@@ -29,7 +30,8 @@ export default function Sidebar({
   onNewConversation,
   onClose,
   onToggleSidebar,
-  isLoading = false
+  isLoading = false,
+  isLoadingHistory = false
 }: SidebarProps) {
   const formatDate = (date: Date) => {
     const now = new Date();
@@ -144,19 +146,7 @@ export default function Sidebar({
                   )}
                 </div>
                 
-                {/* 选中指示器 */}
-                {currentConversationId === conversation.id && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // 防止触发父元素的点击事件
-                      onToggleSidebar?.();
-                    }}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors group"
-                    title="点击切换侧边栏"
-                  >
-                    <div className="w-2 h-2 bg-blue-600 rounded-full group-hover:scale-110 transition-transform"></div>
-                  </button>
-                )}
+                
               </div>
             ))}
           </div>

@@ -19,6 +19,30 @@ export interface CreateNewChatResponse {
   error?: string;
 }
 
+export interface GetHistoryChatsRequest {
+  user_id: string;
+}
+
+export interface HistoryChatItem {
+  chat_id: string;
+  title: string;
+  session_id: string;
+  created_at: string;
+  updated_at: string;
+  message_count?: number;
+}
+
+export interface GetHistoryChatsResponse {
+  success: boolean;
+  data?: HistoryChatItem[];
+  error?: string;
+  detail?: Array<{
+    loc: [string, number];
+    msg: string;
+    type: string;
+  }>;
+}
+
 export interface ChatRequest {
   files?: File[];
   user_id: string;
@@ -345,6 +369,51 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
         session_id: request.session_id
       },
       error: error instanceof Error ? error.message : '发送消息失败'
+    };
+  }
+}
+
+// 获取历史对话接口
+export async function getHistoryChats(request: GetHistoryChatsRequest): Promise<GetHistoryChatsResponse> {
+  try {
+    console.log('获取历史对话请求:', request);
+
+    // 使用 GET 方法，将参数作为查询参数（参考 createNewChat 的实现）
+    const url = new URL('/api/v1/chat/get_history_chats', window.location.origin);
+    url.searchParams.append('user_id', request.user_id);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      // 移除 Content-Type 头部，因为 GET 请求通常不需要
+    });
+
+    console.log('获取历史对话响应状态:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('获取历史对话响应数据:', data);
+    
+    // 检查是否返回错误详情
+    if (data.detail && Array.isArray(data.detail)) {
+      return {
+        success: false,
+        error: '获取历史对话失败',
+        detail: data.detail
+      };
+    }
+    
+    return {
+      success: true,
+      data: Array.isArray(data) ? data : (data.data || [])
+    };
+  } catch (error) {
+    console.error('Get history chats API error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '获取历史对话失败'
     };
   }
 }

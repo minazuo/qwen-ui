@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import MessageInput from './MessageInput';
-import { sendChatMessageStream, generateSessionId, defaultChatModelInfo, createNewChat, type ChatModelInfo } from '../lib/api';
+import { sendChatMessageStream, generateSessionId, defaultChatModelInfo, createNewChat, getHistoryChats, type ChatModelInfo, type HistoryChatItem } from '../lib/api';
 
 interface Message {
   id: string;
@@ -22,23 +22,14 @@ interface Conversation {
 }
 
 export default function ChatContainer() {
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: '1',
-      title: '新对话',
-      sessionId: generateSessionId('123'),
-      messages: [
-        // 初始不添加AI消息，等待用户发送第一条消息时再添加
-      ],
-      lastMessage: new Date()
-    }
-  ]);
-  const [currentConversationId, setCurrentConversationId] = useState<string>('1');
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatModelInfo, setChatModelInfo] = useState<ChatModelInfo>(defaultChatModelInfo);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   // 检测屏幕尺寸
   useEffect(() => {
@@ -54,6 +45,82 @@ export default function ChatContainer() {
     window.addEventListener('resize', checkScreenSize);
 
     return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // 加载历史对话
+  useEffect(() => {
+    const loadHistoryChats = async () => {
+      try {
+        setIsLoadingHistory(true);
+        console.log('开始加载历史对话...');
+        
+        const response = await getHistoryChats({ user_id: '123' });
+        
+        if (response.success && response.data) {
+          console.log('历史对话加载成功:', response.data);
+          
+          // 将历史对话转换为本地对话格式
+          const historyConversations: Conversation[] = response.data.map((chat: HistoryChatItem) => ({
+            id: chat.chat_id,
+            title: chat.title,
+            sessionId: chat.session_id,
+            messages: [], // 历史对话的具体消息内容需要另外的接口获取，这里先为空
+            lastMessage: new Date(chat.updated_at)
+          }));
+          
+          // 如果没有历史对话，创建一个默认的新对话
+          if (historyConversations.length === 0) {
+            const defaultConversation: Conversation = {
+              id: '1',
+              title: '新对话',
+              sessionId: generateSessionId('123'),
+              messages: [],
+              lastMessage: new Date()
+            };
+            setConversations([defaultConversation]);
+            setCurrentConversationId('1');
+          } else {
+            setConversations(historyConversations);
+            setCurrentConversationId(historyConversations[0].id);
+          }
+        } else {
+          console.error('加载历史对话失败:', response.error || response.detail);
+          // 如果加载失败，创建一个默认对话
+          const defaultConversation: Conversation = {
+            id: '1',
+            title: '新对话',
+            sessionId: generateSessionId('123'),
+            messages: [],
+            lastMessage: new Date()
+          };
+          setConversations([defaultConversation]);
+          setCurrentConversationId('1');
+          
+          if (response.detail) {
+            setError('加载历史对话失败: ' + response.detail.map(d => d.msg).join(', '));
+          } else {
+            setError(response.error || '加载历史对话失败');
+          }
+        }
+      } catch (error) {
+        console.error('加载历史对话异常:', error);
+        // 异常情况下也创建默认对话
+        const defaultConversation: Conversation = {
+          id: '1',
+          title: '新对话',
+          sessionId: generateSessionId('123'),
+          messages: [],
+          lastMessage: new Date()
+        };
+        setConversations([defaultConversation]);
+        setCurrentConversationId('1');
+        setError('网络错误，无法加载历史对话');
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadHistoryChats();
   }, []);
 
   const currentConversation = conversations.find(conv => conv.id === currentConversationId);
@@ -311,6 +378,7 @@ export default function ChatContainer() {
           onClose={isMobile ? () => setIsSidebarVisible(false) : undefined}
           onToggleSidebar={toggleSidebar}
           isLoading={isLoading}
+          isLoadingHistory={isLoadingHistory}
         />
       </div>
       
