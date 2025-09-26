@@ -207,7 +207,7 @@ export default function ChatContainer() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-full">
       {/* 左侧历史对话 */}
       <Sidebar
         conversations={conversations}
