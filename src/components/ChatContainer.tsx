@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import MessageInput from './MessageInput';
-import { sendChatMessageStream, generateSessionId, defaultChatModelInfo, type ChatModelInfo } from '../lib/api';
+import { sendChatMessageStream, generateSessionId, defaultChatModelInfo, createNewChat, type ChatModelInfo } from '../lib/api';
 
 interface Message {
   id: string;
@@ -204,20 +204,74 @@ export default function ChatContainer() {
     }
   };
 
-  const handleNewConversation = () => {
-    const newConversation: Conversation = {
-      id: Date.now().toString(),
-      title: '新对话',
-      sessionId: generateSessionId('123'),
-      messages: [
-        // 初始不添加AI消息，等待用户发送消息时再添加
-      ],
-      lastMessage: new Date()
-    };
+  const handleNewConversation = async () => {
+    // 检查是否已经有空对话（没有消息的对话）
+    const emptyConversation = conversations.find(conv => conv.messages.length === 0);
+    
+    if (emptyConversation) {
+      // 如果已经有空对话，直接切换到该对话
+      console.log('发现空对话，直接切换:', emptyConversation);
+      setCurrentConversationId(emptyConversation.id);
+      setError(null);
+      
+      // 在手机端切换后隐藏侧边栏
+      if (isMobile) {
+        setIsSidebarVisible(false);
+      }
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // 调用后端创建新对话接口
+      const response = await createNewChat({ user_id: '123' });
+      
+      if (response.success && response.data) {
+        const newConversation: Conversation = {
+          id: Date.now().toString(),
+          title: response.data.title || '新对话',
+          sessionId: response.data.session_id || generateSessionId('123'),
+          messages: [],
+          lastMessage: new Date()
+        };
 
-    setConversations(prev => [newConversation, ...prev]);
-    setCurrentConversationId(newConversation.id);
-    setError(null);
+        setConversations(prev => [newConversation, ...prev]);
+        setCurrentConversationId(newConversation.id);
+        
+        // 在手机端创建后隐藏侧边栏
+        if (isMobile) {
+          setIsSidebarVisible(false);
+        }
+        
+        console.log('新对话创建成功:', newConversation);
+      } else {
+        throw new Error(response.error || '创建对话失败');
+      }
+    } catch (error) {
+      console.error('创建新对话失败:', error);
+      setError('创建新对话失败，请重试');
+      
+      // 如果接口失败，依然创建本地对话
+      const fallbackConversation: Conversation = {
+        id: Date.now().toString(),
+        title: '新对话',
+        sessionId: generateSessionId('123'),
+        messages: [],
+        lastMessage: new Date()
+      };
+
+      setConversations(prev => [fallbackConversation, ...prev]);
+      setCurrentConversationId(fallbackConversation.id);
+      
+      // 在手机端创建后隐藏侧边栏
+      if (isMobile) {
+        setIsSidebarVisible(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSelectConversation = (conversationId: string) => {
@@ -256,6 +310,7 @@ export default function ChatContainer() {
           onNewConversation={handleNewConversation}
           onClose={isMobile ? () => setIsSidebarVisible(false) : undefined}
           onToggleSidebar={toggleSidebar}
+          isLoading={isLoading}
         />
       </div>
       

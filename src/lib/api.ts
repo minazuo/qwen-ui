@@ -5,6 +5,20 @@ export interface ChatModelInfo {
   model_name: string;
 }
 
+export interface CreateNewChatRequest {
+  user_id: string;
+}
+
+export interface CreateNewChatResponse {
+  success: boolean;
+  data?: {
+    session_id: string;
+    conversation_id?: string;
+    title?: string;
+  };
+  error?: string;
+}
+
 export interface ChatRequest {
   files?: File[];
   user_id: string;
@@ -20,6 +34,103 @@ export interface ChatResponse {
     session_id: string;
   };
   error?: string;
+}
+
+// 新建对话接口
+export async function createNewChat(request: CreateNewChatRequest): Promise<CreateNewChatResponse> {
+  try {
+    console.log('创建新对话请求:', request);
+
+    // 尝试 GET 方法，将参数作为查询参数
+    const url = new URL('/api/v1/chat/create_new_chat', window.location.origin);
+    url.searchParams.append('user_id', request.user_id);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('新建对话响应状态:', response.status);
+
+    if (!response.ok) {
+      // 如果 GET 失败，尝试 POST 方法
+      console.log('GET 方法失败，尝试 POST 方法');
+      return await createNewChatPost(request);
+    }
+
+    const data = await response.json();
+    console.log('新建对话响应数据:', data);
+    
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('Create new chat API error:', error);
+    // 如果 GET 方法出错，尝试 POST 方法
+    try {
+      console.log('GET 方法出错，尝试 POST 方法');
+      return await createNewChatPost(request);
+    } catch (postError) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '创建新对话失败'
+      };
+    }
+  }
+}
+
+// POST 方法的备用实现
+async function createNewChatPost(request: CreateNewChatRequest): Promise<CreateNewChatResponse> {
+  try {
+    // 尝试使用 FormData 格式（类似聊天接口）
+    const formData = new FormData();
+    formData.append('user_id', request.user_id);
+
+    const response = await fetch('/api/v1/chat/create_new_chat', {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log('FormData POST 方法响应状态:', response.status);
+
+    if (!response.ok) {
+      // 如果 FormData 也失败，尝试原始 JSON 方法
+      const jsonResponse = await fetch('/api/v1/chat/create_new_chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      console.log('JSON POST 方法响应状态:', jsonResponse.status);
+
+      if (!jsonResponse.ok) {
+        throw new Error(`HTTP error! status: ${jsonResponse.status}`);
+      }
+
+      const jsonData = await jsonResponse.json();
+      console.log('JSON POST 方法响应数据:', jsonData);
+      
+      return {
+        success: true,
+        data: jsonData
+      };
+    }
+
+    const data = await response.json();
+    console.log('FormData POST 方法响应数据:', data);
+    
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    throw error;
+  }
 }
 
 // 流式响应回调类型
