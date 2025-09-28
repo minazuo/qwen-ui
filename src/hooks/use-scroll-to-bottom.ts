@@ -14,7 +14,7 @@ export function useScrollToBottom({
     isChangingSession = false
 }: UseScrollToBottomProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isAtBottom, setIsAtBottom] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
     const [lastMessageContent, setLastMessageContent] = useState('');

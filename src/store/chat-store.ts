@@ -5,6 +5,7 @@ import { format, isToday, isThisWeek, isThisMonth } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useUserStore, ModelType } from './user'
 import { WebSearchResponse } from '@/services/chat/chat'
+import { createNewChat, getHistoryChats, HistoryChatItem } from '@/services/chat/session'
 
 // 消息和会话的类型定义
 export interface ChatMessage {
@@ -24,6 +25,11 @@ export interface ChatSession {
     timestamp: Date
     model?: 'QWEN' | 'DEEPSEEK'
     enableDeepThinking?: boolean
+    // 添加后端相关字段
+    session_id?: string  // 后端会话ID
+    user_id?: string     // 用户ID
+    created_at?: string  // 创建时间
+    updated_at?: string  // 更新时间
 }
 
 // 按时间分组的会话
@@ -135,7 +141,8 @@ interface ChatState {
         isComplete: boolean
     }
     // Actions
-    createNewSession: () => string
+    createNewSession: () => Promise<string>
+    loadHistorySessions: () => Promise<void>
     setCurrentSession: (sessionId: string | null) => void
     addMessage: (message: ChatMessage, sessionId?: string) => void
     updateAssistantMessage: (content: string, thinkContent?: string, sessionId?: string, webSearchData?: WebSearchResponse) => void
@@ -174,11 +181,154 @@ export const useChatStore = create<ChatState>()(
                 isComplete: false
             },
 
-            createNewSession: () => {
-                const newSession = createSession()
-                set({ sessions: [newSession, ...get().sessions], currentSession: newSession.id })
-                localStorage.removeItem(CURRENT_SESSION_KEY)
-                return newSession.id
+            createNewSession: async () => {
+                try {
+                    console.log('开始创建新会话...');
+                    
+                    // 调用后端接口创建新会话
+                    const response = await createNewChat({ user_id: '123' });
+                    
+                    if (response.success && response.data) {
+                        console.log('后端创建会话成功:', response.data);
+                        
+                        // 创建本地会话对象
+                        const newSession = {
+                            ...createSession(response.data.prompt || '新对话'),
+                            // 使用后端返回的session_id作为本地id
+                            id: response.data.session_id,
+                            session_id: response.data.session_id,
+                            user_id: response.data.user_id,
+                            created_at: response.data.created_at,
+                            updated_at: response.data.updated_at,
+                            timestamp: new Date(response.data.created_at)
+                        };
+                        
+                        // 添加到store
+                        set({ 
+                            sessions: [newSession, ...get().sessions], 
+                            currentSession: newSession.id 
+                        });
+                        
+                        localStorage.setItem(CURRENT_SESSION_KEY, newSession.id);
+                        console.log('新会话已添加到store:', newSession.id);
+                        
+                        return newSession.id;
+                    } else {
+                        console.error('后端创建会话失败:', response.error);
+                        // 后端失败时创建本地会话
+                        const fallbackSession = createSession();
+                        set({ 
+                            sessions: [fallbackSession, ...get().sessions], 
+                            currentSession: fallbackSession.id 
+                        });
+                        localStorage.setItem(CURRENT_SESSION_KEY, fallbackSession.id);
+                        return fallbackSession.id;
+                    }
+                } catch (error) {
+                    console.error('创建新会话异常:', error);
+                    // 异常情况下创建本地会话
+                    const fallbackSession = createSession();
+                    set({ 
+                        sessions: [fallbackSession, ...get().sessions], 
+                        currentSession: fallbackSession.id 
+                    });
+                    localStorage.setItem(CURRENT_SESSION_KEY, fallbackSession.id);
+                    return fallbackSession.id;
+                }
+            },
+
+            loadHistorySessions: async () => {
+                try {
+                    console.log('开始加载历史会话...');
+                    
+                    const response = await getHistoryChats({ user_id: '123' });
+                    
+                    if (response.success && response.data) {
+                        console.log('历史会话加载成功:', response.data);
+                        
+                        // 将后端数据转换为本地会话格式
+                        const historySessions: ChatSession[] = response.data.map((item: HistoryChatItem) => {
+                            // 处理消息数据
+                            let messages: ChatMessage[] = [];
+                            
+                            if (item.messages && Array.isArray(item.messages)) {
+                                // 过滤掉system消息，只保留user和assistant消息
+                                const userMessages = item.messages.filter(msg => msg.role !== 'system');
+                                messages = userMessages.map((msg, index) => ({
+                                    id: `${item.session_id}_msg_${index}`,
+                                    content: msg.content,
+                                    role: msg.role as 'user' | 'assistant',
+                                    timestamp: new Date(item.created_at)
+                                }));
+                            } else if (item.prompt) {
+                                // 如果没有完整消息但有prompt，创建初始用户消息
+                                messages = [{
+                                    id: `${item.session_id}_prompt`,
+                                    content: item.prompt,
+                                    role: 'user',
+                                    timestamp: new Date(item.created_at)
+                                }];
+                            }
+                            
+                            // 生成对话标题
+                            let title = item.title;
+                            if (!title) {
+                                title = item.prompt ? 
+                                    (item.prompt.length > 20 ? item.prompt.slice(0, 20) + '...' : item.prompt) : 
+                                    '新对话';
+                            }
+                            
+                            return {
+                                id: item.session_id,
+                                title: title,
+                                messages: messages,
+                                timestamp: new Date(item.updated_at),
+                                session_id: item.session_id,
+                                user_id: item.user_id,
+                                created_at: item.created_at,
+                                updated_at: item.updated_at,
+                                model: useUserStore.getState().selectedModel as 'QWEN' | 'DEEPSEEK',
+                                enableDeepThinking: useUserStore.getState().enableDeepThinking
+                            };
+                        });
+                        
+                        // 根据内存中的经验，仅当当前对话列表为空时才设置历史会话
+                        const currentSessions = get().sessions;
+                        if (currentSessions.length === 0) {
+                            set({ sessions: historySessions });
+                            
+                            // 如果有历史会话，设置第一个为当前会话
+                            if (historySessions.length > 0) {
+                                const firstSession = historySessions[0];
+                                set({ 
+                                    currentSession: firstSession.id,
+                                    messages: firstSession.messages
+                                });
+                                localStorage.setItem(CURRENT_SESSION_KEY, firstSession.id);
+                            }
+                        } else {
+                            console.log('当前已有会话，跳过历史会话设置以避免数据丢失');
+                        }
+                    } else {
+                        console.error('加载历史会话失败:', response.error || response.detail);
+                        
+                        // 仅当当前对话列表为空时才创建默认会话
+                        const currentSessions = get().sessions;
+                        if (currentSessions.length === 0) {
+                            console.log('历史会话加载失败且无现有会话，创建默认会话');
+                            await get().createNewSession();
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载历史会话异常:', error);
+                    
+                    // 仅当当前对话列表为空时才创建默认会话
+                    const currentSessions = get().sessions;
+                    if (currentSessions.length === 0) {
+                        console.log('历史会话加载异常且无现有会话，创建默认会话');
+                        await get().createNewSession();
+                    }
+                }
             },
 
             setCurrentSession: (sessionId) => {
