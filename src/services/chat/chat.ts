@@ -67,19 +67,24 @@ export async function recommendChat(
     }
 
     try {
+        // 参考 lib/api.ts sendChatMessage 方法，使用 FormData 格式
+        const formData = new FormData();
+        
+        // 添加参数（与 lib/api.ts 中的字段名保持一致）
+        formData.append('user_id', '123');
+        formData.append('session_id', 'user_123_session_fe48ddad-74a9-45b2-bde9-e3a5dba9b834');
+        formData.append('prompt', params.message);  // message 映射到 prompt 字段
+        formData.append('history', JSON.stringify(params.history));
+        formData.append('enable_deep_thinking', params.enable_deep_thinking.toString());
+        formData.append('web_search', params.web_search.toString());
+        if (params.regenerate_mode) {
+            formData.append('regenerate_mode', params.regenerate_mode);
+        }
+
         const response = await fetch(CHAT_API.ENDPOINTS.CHAT, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                session_id: params.session_id,
-                message: params.message,
-                history: params.history,
-                enable_deep_thinking: params.enable_deep_thinking,
-                web_search: params.web_search,
-                regenerate_mode: params.regenerate_mode
-            }),
+            // 移除 Content-Type，让浏览器自动设置
+            body: formData,
             signal: callbacks.signal,
         })
 
