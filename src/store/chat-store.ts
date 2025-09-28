@@ -187,20 +187,20 @@ export const useChatStore = create<ChatState>()(
                     
                     // 调用后端接口创建新会话
                     const response = await createNewChat({ user_id: useUserStore.getState().userId });
-                    
+                    const resultData = response.data;
                     if (response.success && response.data) {
                         console.log('后端创建会话成功:', response.data);
                         
                         // 创建本地会话对象
                         const newSession = {
-                            ...createSession(response.data.data.prompt || '新对话'),
+                            ...createSession(resultData.data.prompt || '新对话'),
                             // 使用后端返回的session_id作为本地id
-                            id: response.data.data.session_id,
-                            session_id: response.data.data.session_id,
-                            user_id: response.data.data.user_id,
-                            created_at: response.data.data.created_at,
-                            updated_at: response.data.data.updated_at,
-                            timestamp: new Date(response.data.data.created_at)
+                            id: resultData.data.session_id,
+                            session_id: resultData.data.session_id,
+                            user_id: resultData.data.user_id,
+                            created_at: resultData.data.created_at,
+                            updated_at: resultData.data.updated_at,
+                            timestamp: new Date(resultData.data.created_at)
                         };
                         
                         // 添加到store

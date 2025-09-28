@@ -12,7 +12,7 @@ export const CHAT_API = {
         CHAT: `${API_BASE_URL}/chat/base_chat`,
         CREATE_NEW_CHAT: `${API_BASE_URL}/chat/create_new_chat`,
         HISTORY_CHAT: `${API_BASE_URL}/chat/get_history_chats`,
-        CHAT_FILE: `${API_BASE_URL}/chat/chat_file`,
+        CHAT_FILE: `${API_BASE_URL}/chat/base_chat`,
         CREATE_PROMPT_CHAT: `${API_BASE_URL}/chat/create_prompt_chat`,
         GET_PROMPT_CHAT: `${API_BASE_URL}/chat/get_prompt_chat`,
         PROMPT_CHAT: `${API_BASE_URL}/chat/prompt_chat`
