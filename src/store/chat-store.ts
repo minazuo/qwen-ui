@@ -186,21 +186,21 @@ export const useChatStore = create<ChatState>()(
                     console.log('开始创建新会话...');
                     
                     // 调用后端接口创建新会话
-                    const response = await createNewChat({ user_id: '123' });
+                    const response = await createNewChat({ user_id: useUserStore.getState().userId });
                     
                     if (response.success && response.data) {
                         console.log('后端创建会话成功:', response.data);
                         
                         // 创建本地会话对象
                         const newSession = {
-                            ...createSession(response.data.prompt || '新对话'),
+                            ...createSession(response.data.data.prompt || '新对话'),
                             // 使用后端返回的session_id作为本地id
-                            id: response.data.session_id,
-                            session_id: response.data.session_id,
-                            user_id: response.data.user_id,
-                            created_at: response.data.created_at,
-                            updated_at: response.data.updated_at,
-                            timestamp: new Date(response.data.created_at)
+                            id: response.data.data.session_id,
+                            session_id: response.data.data.session_id,
+                            user_id: response.data.data.user_id,
+                            created_at: response.data.data.created_at,
+                            updated_at: response.data.data.updated_at,
+                            timestamp: new Date(response.data.data.created_at)
                         };
                         
                         // 添加到store
@@ -241,7 +241,7 @@ export const useChatStore = create<ChatState>()(
                 try {
                     console.log('开始加载历史会话...');
                     
-                    const response = await getHistoryChats({ user_id: '123' });
+                    const response = await getHistoryChats({ user_id: useUserStore.getState().userId });
                     
                     if (response.success && response.data) {
                         console.log('历史会话加载成功:', response.data);
@@ -297,14 +297,19 @@ export const useChatStore = create<ChatState>()(
                         if (currentSessions.length === 0) {
                             set({ sessions: historySessions });
                             
-                            // 如果有历史会话，设置第一个为当前会话
+                            // 如果有历史会话，设置最新的一个为当前会话
                             if (historySessions.length > 0) {
-                                const firstSession = historySessions[0];
+                                // 按更新时间排序，选择最新的会话
+                                const sortedSessions = [...historySessions].sort((a, b) => 
+                                    new Date(b.updated_at || b.timestamp).getTime() - new Date(a.updated_at || a.timestamp).getTime()
+                                );
+                                const latestSession = sortedSessions[0];
+                                
                                 set({ 
-                                    currentSession: firstSession.id,
-                                    messages: firstSession.messages
+                                    currentSession: latestSession.id,
+                                    messages: latestSession.messages
                                 });
-                                localStorage.setItem(CURRENT_SESSION_KEY, firstSession.id);
+                                localStorage.setItem(CURRENT_SESSION_KEY, latestSession.id);
                             }
                         } else {
                             console.log('当前已有会话，跳过历史会话设置以避免数据丢失');

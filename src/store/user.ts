@@ -6,12 +6,14 @@ export type ModelType = 'QWEN' | 'DEEPSEEK'
 
 // 定义用户设置接口
 export interface UserSettings {
+    userId: string
     selectedModel: ModelType
     enableDeepThinking: boolean
     enableWebSearch: boolean
     // 以后可以在这里添加更多用户设置
 
     // 操作方法
+    setUserId: (userId: string) => void
     setModel: (model: ModelType) => void
     setDeepThinking: (enable: boolean) => void
     setWebSearch: (enable: boolean) => void
@@ -25,11 +27,13 @@ export const useUserStore = create<UserSettings>()(
     persist(
         (set) => ({
             // 默认设置
+            userId: '123',
             selectedModel: 'QWEN',
             enableDeepThinking: false,
             enableWebSearch: false,
 
             // 设置方法
+            setUserId: (userId) => set({ userId }),
             setModel: (model) => set({ selectedModel: model }),
             setDeepThinking: (enable) => set({ enableDeepThinking: enable }),
             setWebSearch: (enable) => set({ enableWebSearch: enable }),
@@ -38,10 +42,11 @@ export const useUserStore = create<UserSettings>()(
             name: STORAGE_KEY,
             // 确保所有状态都被持久化保存
             partialize: (state) => ({
+                userId: state.userId,
                 selectedModel: state.selectedModel,
                 enableDeepThinking: state.enableDeepThinking,
                 enableWebSearch: state.enableWebSearch,
             }),
         }
     )
-) 
+)

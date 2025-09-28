@@ -8,6 +8,7 @@ import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import MessageInput from './MessageInput';
 import { sendChatMessageStream, generateSessionId, defaultChatModelInfo, createNewChat, getHistoryChats, type ChatModelInfo, type HistoryChatItem } from '../lib/api';
+import { useUserStore } from '@/store/user';
 
 interface Message {
   id: string;
@@ -66,7 +67,7 @@ export default function ChatContainer() {
         setIsLoadingHistory(true);
         console.log('开始加载历史对话...');
         
-        const response = await getHistoryChats({ user_id: '123' });
+        const response = await getHistoryChats({ user_id: useUserStore.getState().userId });
         
         if (response.success && response.data) {
           console.log('历史对话加载成功:', response.data);
@@ -120,7 +121,7 @@ export default function ChatContainer() {
             const defaultConversation: Conversation = {
               id: '1',
               title: '新对话',
-              sessionId: generateSessionId('123'),
+              sessionId: generateSessionId(useUserStore.getState().userId),
               messages: [],
               lastMessage: new Date()
             };
@@ -136,12 +137,12 @@ export default function ChatContainer() {
           const defaultConversation: Conversation = {
             id: '1',
             title: '新对话',
-            sessionId: generateSessionId('123'),
+            sessionId: generateSessionId(useUserStore.getState().userId),
             messages: [],
             lastMessage: new Date()
           };
           setConversations([defaultConversation]);
-          setCurrentConversationId('1');
+          setCurrentConversationId(defaultConversation.id);
           
           if (response.detail) {
             setError('加载历史对话失败: ' + response.detail.map(d => d.msg).join(', '));
@@ -155,12 +156,12 @@ export default function ChatContainer() {
         const defaultConversation: Conversation = {
           id: '1',
           title: '新对话',
-          sessionId: generateSessionId('123'),
+          sessionId: generateSessionId(useUserStore.getState().userId),
           messages: [],
           lastMessage: new Date()
         };
         setConversations([defaultConversation]);
-        setCurrentConversationId('1');
+        setCurrentConversationId(defaultConversation.id);
         setError('网络错误，无法加载历史对话');
       } finally {
         setIsLoadingHistory(false);
@@ -232,9 +233,8 @@ export default function ChatContainer() {
       await sendChatMessageStream(
         {
           files,
-          user_id: '123',
-          session_id:'user_123_session_fe48ddad-74a9-45b2-bde9-e3a5dba9b834',
-          // session_id: currentConv.sessionId,
+          user_id: useUserStore.getState().userId,
+          session_id: currentConv.sessionId,  // 使用从store中获取的真实session_id
           prompt: content,
           chatModelInfo
         },
@@ -340,13 +340,13 @@ export default function ChatContainer() {
       setError(null);
       
       // 调用后端创建新对话接口
-      const response = await createNewChat({ user_id: '123' });
+      const response = await createNewChat({ user_id: useUserStore.getState().userId });
       
       if (response.success && response.data) {
         const newConversation: Conversation = {
-          id: Date.now().toString(),
+          id: response.data.session_id,  // 使用后端返回的session_id作为id
           title: response.data.title || '新对话',
-          sessionId: response.data.session_id || generateSessionId('123'),
+          sessionId: response.data.session_id,  // 使用后端返回的session_id
           messages: [],
           lastMessage: new Date()
         };
@@ -369,9 +369,9 @@ export default function ChatContainer() {
       
       // 如果接口失败，依然创建本地对话
       const fallbackConversation: Conversation = {
-        id: Date.now().toString(),
+        id: generateSessionId(useUserStore.getState().userId),
         title: '新对话',
-        sessionId: generateSessionId('123'),
+        sessionId: generateSessionId(useUserStore.getState().userId),
         messages: [],
         lastMessage: new Date()
       };

@@ -20,6 +20,7 @@ export interface WebSearchResponse {
 }
 
 interface RecommendChatParams {
+    user_id?: string  // 添加可选的user_id字段
     session_id: string
     message: string
     history: ChatMessage[]
@@ -71,8 +72,13 @@ export async function recommendChat(
         const formData = new FormData();
         
         // 添加参数（与 lib/api.ts 中的字段名保持一致）
-        formData.append('user_id', '123');
-        formData.append('session_id', 'user_123_session_fe48ddad-74a9-45b2-bde9-e3a5dba9b834');
+        formData.append('user_id', params.user_id || '123');
+        // 确保 session_id 不会回退到默认值
+        if (!params.session_id) {
+            console.error('错误：session_id 未提供或为空');
+            throw new Error('session_id 是必需的参数');
+        }
+        formData.append('session_id', params.session_id);
         formData.append('prompt', params.message);  // message 映射到 prompt 字段
         formData.append('history', JSON.stringify(params.history));
         formData.append('enable_deep_thinking', params.enable_deep_thinking.toString());
@@ -190,4 +196,4 @@ export async function recommendChat(
     }
 
     console.log('=== 消息流结束时间:', new Date().toISOString(), '===')
-} 
+}
